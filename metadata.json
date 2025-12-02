@@ -1,0 +1,5 @@
+{
+  "name": "ConstructAI Takeoff",
+  "description": "Automated construction quantity takeoffs from PDFs and Images using Gemini 2.5.",
+  "requestFramePermissions": []
+}
