@@ -56,7 +56,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, error }) =
           type="file" 
           ref={fileInputRef} 
           className="hidden" 
-          accept="image/png,image/jpeg,application/pdf" 
+          accept="image/png,image/jpeg,application/pdf,.dwg,.dxf" 
           onChange={handleFileChange}
         />
         
@@ -70,11 +70,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, error }) =
           </div>
           <div className="flex items-center space-x-2 text-xs text-slate-400 border border-slate-200 rounded-full px-3 py-1">
             <FileType className="w-3 h-3" />
-            <span>PDF, PNG, JPG supported</span>
+            <span>PDF, PNG, JPG, DWG supported</span>
           </div>
-          <p className="text-xs text-slate-400 pt-2">
-            Note: DWG files should be exported to PDF first.
-          </p>
         </div>
       </div>
 

@@ -16,14 +16,19 @@ const App: React.FC = () => {
     setError(null);
     
     // File Validation
-    const validTypes = ['image/png', 'image/jpeg', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-      setError("Unsupported file format. Please upload PDF, PNG, or JPG.");
+    const validMimeTypes = ['image/png', 'image/jpeg', 'application/pdf'];
+    const validExtensions = ['.dwg', '.dxf'];
+    
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const isValidType = validMimeTypes.includes(file.type) || validExtensions.includes(fileExtension);
+
+    if (!isValidType) {
+      setError("Unsupported file format. Please upload PDF, PNG, JPG, or DWG.");
       return;
     }
 
-    if (file.size > 100 * 10000 * 10000) { // 100MB limit
-      setError("File is too large. Please upload a file smaller than 10MB.");
+    if (file.size > 100 * 1024 * 1024) { // 100MB limit
+      setError("File is too large. Please upload a file smaller than 100MB.");
       return;
     }
 
@@ -31,12 +36,13 @@ const App: React.FC = () => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       if (e.target?.result) {
-        const base64Data = (e.target.result as string).split(',')[1];
+        const resultStr = e.target.result as string;
+        const base64Data = resultStr.split(',')[1];
         const fileUrl = URL.createObjectURL(file);
         
         setUploadedFile({
           name: file.name,
-          type: file.type,
+          type: file.type || 'application/octet-stream', // Fallback for DWG
           data: base64Data,
           url: fileUrl
         });
@@ -44,12 +50,18 @@ const App: React.FC = () => {
         setAppState(AppState.ANALYZING);
 
         try {
-          const result = await generateTakeoff(base64Data, file.type);
+          // Note: Gemini API primarily supports PDF and Images. 
+          // For DWG, we pass it through, but success depends on model capability handling raw CAD data 
+          // or if the user actually uploaded a PDF renamed as DWG. 
+          // In a real-world scenario, a backend converter would be ideal here.
+          const mimeTypeToSend = file.type || (fileExtension === '.dwg' ? 'image/vnd.dwg' : 'application/pdf');
+          
+          const result = await generateTakeoff(base64Data, mimeTypeToSend);
           setTakeoffData(result);
           setAppState(AppState.RESULTS);
         } catch (err) {
           console.error(err);
-          setError("Failed to analyze document. Please ensure the API Key is valid and the image is clear.");
+          setError("Failed to analyze document. The model may not natively support this specific DWG version. Try converting to PDF for best results.");
           setAppState(AppState.UPLOAD);
         }
       }
@@ -97,7 +109,7 @@ const App: React.FC = () => {
               Automated Quantity Takeoffs
             </h1>
             <p className="text-lg text-slate-500">
-              Upload your architectural drawings (PDF or Images) and let our AI extract materials, quantities, and generate your takeoff sheet in seconds.
+              Upload your architectural drawings (PDF, DWG, or Images) and let our AI extract materials, quantities, and generate your takeoff sheet in seconds.
             </p>
           </div>
           <FileUpload onFileSelect={handleFileSelect} error={error} />

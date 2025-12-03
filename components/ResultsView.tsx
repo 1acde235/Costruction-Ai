@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TakeoffResult, UploadedFile, TakeoffItem } from '../types';
-import { Download, LayoutTemplate, FileText, ChevronLeft, Search, Filter } from 'lucide-react';
+import { Download, LayoutTemplate, FileText, ChevronLeft, Search, Filter, FileCode } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -69,6 +69,26 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ data, file, onReset })
     }
   };
 
+  const renderPreview = () => {
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf';
+    
+    if (isImage) {
+      return <img src={file.url} alt="Blueprint" className="w-full h-full object-contain bg-slate-800/5" />;
+    } else if (isPdf) {
+      return <iframe src={file.url} className="w-full h-full" title="Document Preview" />;
+    } else {
+      // Fallback for DWG/DXF or other types that browsers can't render natively
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-50 text-slate-400">
+           <FileCode className="w-16 h-16 mb-4 opacity-50" />
+           <p className="font-medium">Preview not available for {file.name.split('.').pop()?.toUpperCase()} files.</p>
+           <p className="text-xs mt-2">The file is being processed by the AI.</p>
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-50">
       {/* Header */}
@@ -118,14 +138,10 @@ export const ResultsView: React.FC<ResultsViewProps> = ({ data, file, onReset })
         {/* Left Pane: Document Preview */}
         <div className="w-1/2 bg-slate-100 border-r border-slate-200 p-4 flex flex-col">
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 flex-1 overflow-hidden relative">
-             <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+             <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm z-10">
                 Original Document
              </div>
-             {file.type === 'application/pdf' ? (
-                <iframe src={file.url} className="w-full h-full" title="Document Preview" />
-             ) : (
-                <img src={file.url} alt="Blueprint" className="w-full h-full object-contain bg-slate-800/5" />
-             )}
+             {renderPreview()}
           </div>
           <div className="mt-4 bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
              <h3 className="text-sm font-semibold text-slate-800 mb-1">AI Summary</h3>
