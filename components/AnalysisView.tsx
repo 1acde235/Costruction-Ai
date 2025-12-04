@@ -6,21 +6,22 @@ interface AnalysisViewProps {
 }
 
 const steps = [
-  "Uploading document securely...",
-  "Preprocessing visual data...",
-  "Gemini 2.5 identifying structural elements...",
-  "Calculating quantities and measurements...",
-  "Categorizing materials...",
-  "Finalizing takeoff sheet..."
+  "Securely uploading document...",
+  "Scanning grid system & structural axes...",
+  "Reading text labels, dimensions & leader lines...",
+  "Cross-referencing legend & specifications...",
+  "Performing rigorous quantity calculations...",
+  "Generating dimension sheet & rebar schedule..."
 ];
 
 export const AnalysisView: React.FC<AnalysisViewProps> = ({ fileName }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
+    // Slower step progression to imply careful analysis
     const interval = setInterval(() => {
       setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
-    }, 1500);
+    }, 2000); 
 
     return () => clearInterval(interval);
   }, []);
@@ -36,7 +37,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ fileName }) => {
       
       <h2 className="text-2xl font-bold text-slate-800 mb-2">Analyzing {fileName}</h2>
       <p className="text-slate-500 mb-8 text-center max-w-md">
-        Our AI is scanning your blueprint to extract line items, quantities, and specifications.
+        Our AI is systematically scanning your drawing grid-by-grid to ensure every element is captured.
       </p>
 
       <div className="w-full max-w-md space-y-4">

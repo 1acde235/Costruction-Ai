@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { AnalysisView } from './components/AnalysisView';
 import { ResultsView } from './components/ResultsView';
+import { InstructionView } from './components/InstructionView';
 import { generateTakeoff } from './services/geminiService';
 import { AppState, TakeoffResult, UploadedFile } from './types';
 import { HardHat, LayoutDashboard } from 'lucide-react';
@@ -16,7 +17,7 @@ const App: React.FC = () => {
     setError(null);
     
     // File Validation
-    const validMimeTypes = ['image/png', 'image/jpeg', 'application/pdf'];
+    const validMimeTypes = ['image/png', 'image/jpeg', 'application/pdf', 'application/x-pdf'];
     const validExtensions = ['.dwg', '.dxf'];
     
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
@@ -43,33 +44,39 @@ const App: React.FC = () => {
         setUploadedFile({
           name: file.name,
           type: file.type || 'application/octet-stream', // Fallback for DWG
-          data: base64Data,
+          data: base64Data, // Keep pure base64
           url: fileUrl
         });
 
-        setAppState(AppState.ANALYZING);
-
-        try {
-          // Note: Gemini API primarily supports PDF and Images. 
-          // For DWG, we pass it through, but success depends on model capability handling raw CAD data 
-          // or if the user actually uploaded a PDF renamed as DWG. 
-          // In a real-world scenario, a backend converter would be ideal here.
-          const mimeTypeToSend = file.type || (fileExtension === '.dwg' ? 'image/vnd.dwg' : 'application/pdf');
-          
-          const result = await generateTakeoff(base64Data, mimeTypeToSend);
-          setTakeoffData(result);
-          setAppState(AppState.RESULTS);
-        } catch (err) {
-          console.error(err);
-          setError("Failed to analyze document. The model may not natively support this specific DWG version. Try converting to PDF for best results.");
-          setAppState(AppState.UPLOAD);
-        }
+        // Move to instructions step instead of analyzing immediately
+        setAppState(AppState.INSTRUCTIONS);
       }
     };
     reader.onerror = () => {
       setError("Error reading file.");
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleStartAnalysis = async (instructions: string, scopes: string[]) => {
+    if (!uploadedFile) return;
+
+    setAppState(AppState.ANALYZING);
+
+    try {
+      // Identify if this is a CAD file based on extension if mimeType is generic
+      const fileExtension = '.' + uploadedFile.name.split('.').pop()?.toLowerCase();
+      const isCad = fileExtension === '.dwg' || fileExtension === '.dxf';
+      const mimeTypeToSend = isCad ? 'image/vnd.dwg' : (uploadedFile.type || 'application/pdf');
+      
+      const result = await generateTakeoff(uploadedFile.data, mimeTypeToSend, instructions, scopes);
+      setTakeoffData(result);
+      setAppState(AppState.RESULTS);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to analyze document. Please ensure the file is a valid PDF, Image, or standard DWG.");
+      setAppState(AppState.UPLOAD);
+    }
   };
 
   const handleReset = () => {
@@ -127,6 +134,16 @@ const App: React.FC = () => {
               </div>
             ))}
           </div>
+        </main>
+      )}
+
+      {appState === AppState.INSTRUCTIONS && uploadedFile && (
+        <main className="max-w-7xl mx-auto px-6 py-12 flex items-center justify-center min-h-[80vh]">
+          <InstructionView 
+            fileName={uploadedFile.name} 
+            onStart={handleStartAnalysis} 
+            onCancel={handleReset} 
+          />
         </main>
       )}
 
