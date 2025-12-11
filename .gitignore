@@ -1,4 +1,4 @@
-git add ., git commit -m "Fix blank screen"
+
 logs
 *.log
 npm-debug.log*
